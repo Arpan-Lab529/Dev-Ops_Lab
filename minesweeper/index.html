@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark-glass">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper Neo | Modern Minesweeper Webgame</title>
+    <meta name="description" content="A modern, sleek, and aesthetically pleasing Minesweeper game built with custom themes, sound effects, particles, and smooth animations.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Animated Canvas -->
+    <canvas id="bg-canvas"></canvas>
+    
+    <!-- Particle FX Canvas overlay for explosions & confetti -->
+    <canvas id="fx-canvas"></canvas>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">💣</div>
+                <div class="brand-text">
+                    <h1>MINESWEEPER <span class="badge">NEO</span></h1>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <!-- Theme Selector -->
+                <div class="theme-selector-wrapper">
+                    <label for="theme-select" class="icon-btn-label" title="Change Theme">🎨</label>
+                    <select id="theme-select" class="glass-select" aria-label="Select Theme">
+                        <option value="dark-glass">💎 Midnight Glass</option>
+                        <option value="cyberpunk">🌌 Cyberpunk Neon</option>
+                        <option value="emerald">🌿 Emerald Forest</option>
+                        <option value="volcano">🌋 Obsidian Flame</option>
+                        <option value="light-clean">☀️ Solarized Light</option>
+                    </select>
+                </div>
+
+                <!-- Sound Toggle -->
+                <button id="sound-btn" class="icon-btn" title="Toggle Audio (Mute/Unmute)" aria-label="Toggle Audio">
+                    <span class="sound-icon">🔊</span>
+                </button>
+
+                <!-- How to Play -->
+                <button id="help-btn" class="icon-btn" title="How to Play" aria-label="How to Play">
+                    ❓
+                </button>
+
+                <!-- Statistics -->
+                <button id="stats-btn" class="icon-btn" title="Statistics" aria-label="Statistics">
+                    🏆
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Card -->
+        <main class="game-card glass-panel">
+            <!-- Difficulty Selector Bar -->
+            <div class="difficulty-bar">
+                <button class="diff-btn active" data-diff="beginner">
+                    <span class="diff-name">Beginner</span>
+                    <span class="diff-spec">9×9 • 10💣</span>
+                </button>
+                <button class="diff-btn" data-diff="intermediate">
+                    <span class="diff-name">Intermediate</span>
+                    <span class="diff-spec">16×16 • 40💣</span>
+                </button>
+                <button class="diff-btn" data-diff="expert">
+                    <span class="diff-name">Expert</span>
+                    <span class="diff-spec">30×16 • 99💣</span>
+                </button>
+                <button class="diff-btn" data-diff="custom">
+                    <span class="diff-name">Custom</span>
+                    <span class="diff-spec">⚙️ Options</span>
+                </button>
+            </div>
+
+            <!-- Status HUD -->
+            <div class="hud-panel">
+                <!-- Counter: Flag / Mines left -->
+                <div class="hud-box" id="mine-counter-box" title="Mines Remaining">
+                    <span class="hud-icon">🚩</span>
+                    <span id="mine-count" class="hud-value">010</span>
+                </div>
+
+                <!-- Face / Reset Button -->
+                <button id="face-btn" class="face-btn" title="Reset Game" aria-label="Reset Game">
+                    <span id="face-icon">😀</span>
+                </button>
+
+                <!-- Timer -->
+                <div class="hud-box" id="timer-box" title="Time Elapsed">
+                    <span class="hud-icon">⏱️</span>
+                    <span id="timer-count" class="hud-value">000</span>
+                </div>
+            </div>
+
+            <!-- Mobile / Touch Flag Mode Switcher & Hint Bar -->
+            <div class="action-toolbar">
+                <button id="flag-mode-btn" class="tool-btn" title="Toggle Flagging Mode for Touch Screen">
+                    <span class="tool-icon">🚩</span>
+                    <span class="tool-text">Flag Mode: <strong id="flag-mode-status">OFF</strong></span>
+                </button>
+                <button id="hint-btn" class="tool-btn hint-btn" title="Get a smart hint">
+                    <span class="tool-icon">💡</span>
+                    <span class="tool-text">Hint</span>
+                </button>
+            </div>
+
+            <!-- Game Board Viewport -->
+            <div class="board-wrapper">
+                <div id="board" class="minesweeper-board"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-panel">
+            <h2>Custom Game Setup</h2>
+            <form id="custom-form">
+                <div class="form-group">
+                    <label for="custom-width">Width (5 - 40):</label>
+                    <input type="number" id="custom-width" min="5" max="40" value="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="custom-height">Height (5 - 30):</label>
+                    <input type="number" id="custom-height" min="5" max="30" value="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="custom-mines">Mines (1 - 80% cells):</label>
+                    <input type="number" id="custom-mines" min="1" max="300" value="15" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="custom-cancel" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Custom Game</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-panel help-card">
+            <div class="modal-header">
+                <h2>How to Play Minesweeper</h2>
+                <button class="close-modal-btn" data-close="help-modal">✕</button>
+            </div>
+            <div class="modal-body help-content">
+                <div class="help-section">
+                    <h3>🎯 Objective</h3>
+                    <p>Uncover all the safe cells on the board without detonating any hidden mines!</p>
+                </div>
+                <div class="help-section">
+                    <h3>🖱️ Controls</h3>
+                    <ul>
+                        <li><strong>Left Click / Tap:</strong> Uncover a cell.</li>
+                        <li><strong>Right Click / Long Press:</strong> Plant or remove a Flag 🚩 to mark suspected mines.</li>
+                        <li><strong>Middle Click / Double Click on Revealed Number:</strong> "Chord" to automatically uncover all surrounding non-flagged cells if you have flagged the exact number of neighboring mines!</li>
+                        <li><strong>Flag Mode Toggle:</strong> Enable for easy one-tap flagging on mobile devices.</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3>🔢 Numbers Explained</h3>
+                    <p>The number on a revealed cell indicates how many mines are hiding in the 8 adjacent neighboring cells (including diagonals).</p>
+                </div>
+                <div class="help-section">
+                    <h3>💡 Smart Features</h3>
+                    <p>• <strong>Safe First Click:</strong> Your very first click is guaranteed to open a safe 0-mine area!</p>
+                    <p>• <strong>Smart Hint 💡:</strong> Stressed out? Click Hint to get a safe move calculated by logic algorithms.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="stats-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-panel stats-card">
+            <div class="modal-header">
+                <h2>Player Statistics 🏆</h2>
+                <button class="close-modal-btn" data-close="stats-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-played">0</span>
+                        <span class="stat-lbl">Played</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-won">0</span>
+                        <span class="stat-lbl">Won</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-winrate">0%</span>
+                        <span class="stat-lbl">Win Rate</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-streak">0</span>
+                        <span class="stat-lbl">Current Streak</span>
+                    </div>
+                </div>
+
+                <h3 class="stats-subtitle">⚡ Best Times</h3>
+                <div class="best-times-list">
+                    <div class="time-item"><span>Beginner:</span> <strong id="best-beginner">--:--</strong></div>
+                    <div class="time-item"><span>Intermediate:</span> <strong id="best-intermediate">--:--</strong></div>
+                    <div class="time-item"><span>Expert:</span> <strong id="best-expert">--:--</strong></div>
+                </div>
+
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button id="reset-stats-btn" class="btn btn-danger">Reset Statistics</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory / Defeat Overlay Modal -->
+    <div id="result-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-panel result-card">
+            <div class="result-icon-wrapper" id="result-icon">🎉</div>
+            <h2 id="result-title">Victory!</h2>
+            <p id="result-subtitle">You cleared all mines safely!</p>
+            <div class="result-details">
+                <div class="result-detail-item">
+                    <span>Time:</span>
+                    <strong id="result-time">00:00</strong>
+                </div>
+                <div class="result-detail-item" id="result-record-badge">
+                    <span class="badge-new-record">🏆 NEW RECORD!</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="result-play-again" class="btn btn-primary btn-lg">Play Again 🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="audio.js"></script>
+    <script src="effects.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
